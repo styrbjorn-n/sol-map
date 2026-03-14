@@ -1,0 +1,92 @@
+{
+  "celestitalBodies": [
+    {
+      "name": "Mercury",
+      "angularPosition": 4,
+      "semiMajorAxis": 0.3871,
+      "eccentricity": 0.20564,
+      "meanAnomaly0": 3.0507,
+      "argPeriapsis": 0.5082,
+      "orbitalPeriod": 0.2409,
+      "size": 10,
+      "color": "#8C7853"
+    },
+    {
+      "name": "Venus",
+      "angularPosition": 2.1,
+      "semiMajorAxis": 0.7233,
+      "eccentricity": 0.00677,
+      "meanAnomaly0": 0.8745,
+      "argPeriapsis": 0.9582,
+      "orbitalPeriod": 0.6152,
+      "size": 10,
+      "color": "#FFC649"
+    },
+    {
+      "name": "Terra",
+      "angularPosition": 1.75,
+      "semiMajorAxis": 1.0,
+      "eccentricity": 0.01671,
+      "meanAnomaly0": 6.24,
+      "argPeriapsis": 1.7967,
+      "orbitalPeriod": 1,
+      "size": 10,
+      "color": "#4A90E2"
+    },
+    {
+      "name": "Mars",
+      "angularPosition": 5.05,
+      "semiMajorAxis": 1.5237,
+      "eccentricity": 0.09341,
+      "meanAnomaly0": 0.3382,
+      "argPeriapsis": 5.0015,
+      "orbitalPeriod": 1.8807,
+      "size": 10,
+      "color": "#CD5C5C"
+    },
+    {
+      "name": "Jupiter",
+      "angularPosition": 0.6,
+      "semiMajorAxis": 5.2044,
+      "eccentricity": 0.04839,
+      "meanAnomaly0": 0.348,
+      "argPeriapsis": 4.7807,
+      "orbitalPeriod": 11.8565,
+      "size": 10,
+      "color": "#C88B3A"
+    },
+    {
+      "name": "Saturn",
+      "angularPosition": 1.98,
+      "semiMajorAxis": 9.5826,
+      "eccentricity": 0.05386,
+      "meanAnomaly0": 5.5323,
+      "argPeriapsis": 5.9208,
+      "orbitalPeriod": 29.423,
+      "size": 10,
+      "color": "#FAD5A5"
+    },
+    {
+      "name": "Uranus",
+      "angularPosition": 2.98,
+      "semiMajorAxis": 19.2184,
+      "eccentricity": 0.04726,
+      "meanAnomaly0": 2.482,
+      "argPeriapsis": 1.692,
+      "orbitalPeriod": 83.947,
+      "size": 10,
+      "color": "#4FD0E7"
+    },
+    {
+      "name": "Neptune",
+      "angularPosition": 0.31,
+      "semiMajorAxis": 30.07,
+      "eccentricity": 0.00859,
+      "meanAnomaly0": 4.4723,
+      "argPeriapsis": 4.7694,
+      "orbitalPeriod": 164.7701,
+      "size": 10,
+      "color": "#4166F5"
+    }
+  ]
+}
