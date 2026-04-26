@@ -82,7 +82,7 @@ if (ctx !== null) {
 
     context.beginPath();
     context.ellipse(cx, cy, a_px, b_px, p.argPeriapsis, 0, 2 * Math.PI);
-    context.strokeStyle = 'white';
+    context.strokeStyle = 'gray';
     context.lineWidth = 1;
     context.stroke();
     context.closePath();
@@ -97,8 +97,21 @@ if (ctx !== null) {
       b_px * Math.cos(p.argPeriapsis) * Math.sin(v);
 
     context.beginPath();
-    context.arc(pX, pY, p.size, 0, 2 * Math.PI);
-    context.fillStyle = p.color;
+    context.arc(pX, pY, 17, 0, 2 * Math.PI);
+    context.fillStyle = 'black';
+    context.fill();
+    context.closePath();
+
+    context.beginPath();
+    context.ellipse(pX, pY, 9, 9, 0, 0, 2 * Math.PI);
+    context.strokeStyle = p.color;
+    context.lineWidth = 1;
+    context.stroke();
+    context.closePath();
+
+    context.beginPath();
+    context.arc(pX, pY, 1.5, 0, 2 * Math.PI);
+    context.fillStyle = 'white';
     context.fill();
     context.closePath();
   }
