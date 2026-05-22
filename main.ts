@@ -8,8 +8,11 @@ type Planet = {
   semiMajorAxis: number; // a in Au
   eccentricity: number; // e
   meanLongitude: number; // L in degrees
+  meanLongitudeRate: number;
   longitudeOfPerihelion: number; // ϖ in degrees
+  longitudeOfPerihelionRate: number;
   longitudeOfAscendingNode: number; // Ω in degrees
+  longitudeOfAscendingNodeRate: number;
   size: number;
   color: string;
 };
@@ -39,27 +42,19 @@ if (ctx !== null) {
     return toRad(longitudeOfPerihelion - longitudeOfAscendingNode);
   }
 
-  function getM0(meanLongitude: number, longitudeOfPerihelion: number): number {
-    // M₀ = L - ϖ
-    const M0 = meanLongitude - longitudeOfPerihelion;
-    const M0Rad = ((toRad(M0) % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-    return M0Rad;
-  }
-
-  function getJulianYearsSinceJ2000(): number {
+  function getJulianCenturiesSinceJ2000(): number {
     // returns n
-    const millisecondsToDays = 86400000;
-    const julianDaysBetweenBaseEpochs = 10957.5; // julian days between jan 1 1970 and jan 1.5 2000
-    const julianDays =
-      Date.now() / millisecondsToDays - julianDaysBetweenBaseEpochs; // converts millisecond value since jan 1 1970 to jullian days since j2000.0
-    return julianDays / 365.25;
+    const msPerDay = 86400000;
+    const jd = Date.now() / msPerDay + 2440587.5;
+    return (jd - 2451545.0) / 36525;
   }
 
-  function getMeanAnomalyAtT(m0: number, a: number, n: number): number {
-    // returns M
-    const T = Math.pow(a, 1.5);
-    const M = m0 + (2 * Math.PI * n) / T;
-    return ((M % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+  function getOrbitalElementsAtT(p: Planet, T: number) {
+    return {
+      L: p.meanLongitude + p.meanLongitudeRate * T,
+      Varpi: p.longitudeOfPerihelion + p.longitudeOfPerihelionRate * T,
+      Omega: p.longitudeOfAscendingNode + p.longitudeOfAscendingNodeRate * T,
+    };
   }
 
   function solveEccentricAnomaly(
@@ -87,14 +82,13 @@ if (ctx !== null) {
 
   // should get split up and only handle rendering itself
   function drawPlanet(p: Planet) {
-    const meanAnomaly0 = getM0(p.meanLongitude, p.longitudeOfPerihelion);
-    const argPeriapsis = getArgPeriapsis(
-      p.longitudeOfPerihelion,
-      p.longitudeOfAscendingNode,
-    );
+    const T = getJulianCenturiesSinceJ2000();
+    const { L, Varpi, Omega } = getOrbitalElementsAtT(p, T);
 
-    const n = getJulianYearsSinceJ2000();
-    const M = getMeanAnomalyAtT(meanAnomaly0, p.semiMajorAxis, n);
+    const M =
+      ((toRad(L - Varpi) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+    const argPeriapsis = toRad(Varpi - Omega);
+
     const E = solveEccentricAnomaly(M, p.eccentricity);
     const v = getTrueAnomaly(E, p.eccentricity);
 
@@ -113,20 +107,9 @@ if (ctx !== null) {
     context.closePath();
 
     const r = (a_px * (1 - e ** 2)) / (1 + e * Math.cos(v));
-
     const angle = v + argPeriapsis;
-
     const pX = r * Math.cos(angle);
     const pY = -r * Math.sin(angle);
-    //    const pX =
-    //      cx +
-    //      a_px * Math.cos(argPeriapsis) * Math.cos(v) -
-    //      b_px * Math.sin(argPeriapsis) * Math.sin(v);
-    //    const pY = -(
-    //      cy +
-    //      a_px * Math.sin(argPeriapsis) * Math.cos(v) +
-    //      b_px * Math.cos(argPeriapsis) * Math.sin(v)
-    //    );
 
     context.beginPath();
     context.arc(pX, pY, 17, 0, 2 * Math.PI);
@@ -176,24 +159,20 @@ if (ctx !== null) {
   }
 
   function debugPlanet(p: Planet) {
-    const meanAnomaly0 = getM0(p.meanLongitude, p.longitudeOfPerihelion);
-    const argPeriapsis = getArgPeriapsis(
-      p.longitudeOfPerihelion,
-      p.longitudeOfAscendingNode,
-    );
-    const n = getJulianYearsSinceJ2000();
-    const M = getMeanAnomalyAtT(meanAnomaly0, p.semiMajorAxis, n);
+    const T = getJulianCenturiesSinceJ2000();
+    const { L, Varpi, Omega } = getOrbitalElementsAtT(p, T);
+
+    const M =
+      ((toRad(L - Varpi) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+    const argPeriapsis = toRad(Varpi - Omega);
+
     const E = solveEccentricAnomaly(M, p.eccentricity);
     const v = getTrueAnomaly(E, p.eccentricity);
 
     console.group(`🪐 ${p.name}`);
-    console.log('n (Julian years since J2000):', n.toFixed(6));
+    console.log('n (Julian years since J2000):', T.toFixed(6));
     console.log(
-      'M₀ (mean anomaly at epoch, deg):',
-      ((meanAnomaly0 * 180) / Math.PI).toFixed(4),
-    );
-    console.log(
-      'M  (mean anomaly at T, deg):    ',
+      'M (mean anomaly at T, deg):',
       ((M * 180) / Math.PI).toFixed(4),
     );
     console.log(
