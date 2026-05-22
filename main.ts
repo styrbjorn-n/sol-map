@@ -5,12 +5,11 @@ const ctx = canvas.getContext('2d');
 
 type Planet = {
   name: string;
-  angularPosition: number; // temp
   semiMajorAxis: number; // a in Au
   eccentricity: number; // e
-  meanAnomaly0: number; // M₀ at J2000.0 in radians
-  argPeriapsis: number; // ω at  J2000.0 in radians
-  orbitalPeriod: number; // T, in Julian years
+  meanLongitude: number; // L in degrees
+  longitudeOfPerihelion: number; // ϖ in degrees
+  longitudeOfAscendingNode: number; // Ω in degrees
   size: number;
   color: string;
 };
@@ -28,6 +27,25 @@ if (ctx !== null) {
     }
   }
 
+  function toRad(deg: number): number {
+    return (deg * Math.PI) / 180;
+  }
+
+  function getArgPeriapsis(
+    longitudeOfPerihelion: number,
+    longitudeOfAscendingNode: number,
+  ): number {
+    // ω = ϖ - Ω
+    return toRad(longitudeOfPerihelion - longitudeOfAscendingNode);
+  }
+
+  function getM0(meanLongitude: number, longitudeOfPerihelion: number): number {
+    // M₀ = L - ϖ
+    const M0 = meanLongitude - longitudeOfPerihelion;
+    const M0Rad = ((toRad(M0) % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+    return M0Rad;
+  }
+
   function getJulianYearsSinceJ2000(): number {
     // returns n
     const millisecondsToDays = 86400000;
@@ -37,9 +55,11 @@ if (ctx !== null) {
     return julianDays / 365.25;
   }
 
-  function getMeanAnomalyAtT(m0: number, T: number, n: number): number {
+  function getMeanAnomalyAtT(m0: number, a: number, n: number): number {
     // returns M
-    return m0 + ((Math.PI * 2) / T) * n;
+    const T = Math.pow(a, 1.5);
+    const M = m0 + (2 * Math.PI * n) / T;
+    return ((M % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
   }
 
   function solveEccentricAnomaly(
@@ -67,34 +87,46 @@ if (ctx !== null) {
 
   // should get split up and only handle rendering itself
   function drawPlanet(p: Planet) {
+    const meanAnomaly0 = getM0(p.meanLongitude, p.longitudeOfPerihelion);
+    const argPeriapsis = getArgPeriapsis(
+      p.longitudeOfPerihelion,
+      p.longitudeOfAscendingNode,
+    );
+
     const n = getJulianYearsSinceJ2000();
-    const M = getMeanAnomalyAtT(p.meanAnomaly0, p.orbitalPeriod, n);
+    const M = getMeanAnomalyAtT(meanAnomaly0, p.semiMajorAxis, n);
     const E = solveEccentricAnomaly(M, p.eccentricity);
     const v = getTrueAnomaly(E, p.eccentricity);
-    const angle = v;
 
     const a_px = getScaledDistance(p.semiMajorAxis);
     const e = p.eccentricity;
     const b_px = a_px * Math.sqrt(1 - e ** 2);
     const c_px = a_px * e;
-    const cx = -c_px * Math.cos(p.argPeriapsis);
-    const cy = -c_px * Math.sin(p.argPeriapsis);
+    const cx = -c_px * Math.cos(argPeriapsis);
+    const cy = c_px * Math.sin(argPeriapsis);
 
     context.beginPath();
-    context.ellipse(cx, cy, a_px, b_px, p.argPeriapsis, 0, 2 * Math.PI);
+    context.ellipse(cx, cy, a_px, b_px, argPeriapsis, 0, 2 * Math.PI);
     context.strokeStyle = 'gray';
     context.lineWidth = 1;
     context.stroke();
     context.closePath();
 
-    const pX =
-      cx +
-      a_px * Math.cos(p.argPeriapsis) * Math.cos(v) -
-      b_px * Math.sin(p.argPeriapsis) * Math.sin(v);
-    const pY =
-      cy +
-      a_px * Math.sin(p.argPeriapsis) * Math.cos(v) +
-      b_px * Math.cos(p.argPeriapsis) * Math.sin(v);
+    const r = (a_px * (1 - e ** 2)) / (1 + e * Math.cos(v));
+
+    const angle = v + argPeriapsis;
+
+    const pX = r * Math.cos(angle);
+    const pY = -r * Math.sin(angle);
+    //    const pX =
+    //      cx +
+    //      a_px * Math.cos(argPeriapsis) * Math.cos(v) -
+    //      b_px * Math.sin(argPeriapsis) * Math.sin(v);
+    //    const pY = -(
+    //      cy +
+    //      a_px * Math.sin(argPeriapsis) * Math.cos(v) +
+    //      b_px * Math.cos(argPeriapsis) * Math.sin(v)
+    //    );
 
     context.beginPath();
     context.arc(pX, pY, 17, 0, 2 * Math.PI);
@@ -143,8 +175,45 @@ if (ctx !== null) {
     context.closePath();
   }
 
-  // calling of functions
+  function debugPlanet(p: Planet) {
+    const meanAnomaly0 = getM0(p.meanLongitude, p.longitudeOfPerihelion);
+    const argPeriapsis = getArgPeriapsis(
+      p.longitudeOfPerihelion,
+      p.longitudeOfAscendingNode,
+    );
+    const n = getJulianYearsSinceJ2000();
+    const M = getMeanAnomalyAtT(meanAnomaly0, p.semiMajorAxis, n);
+    const E = solveEccentricAnomaly(M, p.eccentricity);
+    const v = getTrueAnomaly(E, p.eccentricity);
 
+    console.group(`🪐 ${p.name}`);
+    console.log('n (Julian years since J2000):', n.toFixed(6));
+    console.log(
+      'M₀ (mean anomaly at epoch, deg):',
+      ((meanAnomaly0 * 180) / Math.PI).toFixed(4),
+    );
+    console.log(
+      'M  (mean anomaly at T, deg):    ',
+      ((M * 180) / Math.PI).toFixed(4),
+    );
+    console.log(
+      'E  (eccentric anomaly, deg):    ',
+      ((E * 180) / Math.PI).toFixed(4),
+    );
+    console.log(
+      'ν  (true anomaly, deg):         ',
+      ((v * 180) / Math.PI).toFixed(4),
+    );
+    console.log(
+      'ω  (arg of periapsis, deg):     ',
+      ((argPeriapsis * 180) / Math.PI).toFixed(4),
+    );
+    console.groupEnd();
+  }
+
+  // calling of functions
+  const cb: Planet[] = celestialBodies.celestitalBodies;
+  debugPlanet(cb[2]);
   resizeMap();
 
   window.addEventListener('resize', resizeMap);
