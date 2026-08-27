@@ -1,7 +1,7 @@
-export function getScaledDistance(AU: number) {
+export function getScaledDistance(AU: number, Scale: boolean = false): number {
   const baseUnit = Math.min(window.innerWidth, window.innerHeight) / 12;
 
-  if (AU < 2) {
+  if (AU < 2 || Scale === true) {
     return AU * baseUnit;
   } else {
     return 2 * baseUnit + Math.pow(AU - 2, 0.65) * baseUnit * 0.4;

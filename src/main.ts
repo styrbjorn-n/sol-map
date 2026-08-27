@@ -1,5 +1,6 @@
 import celestialBodies from '../celestialBodies.json';
 import { drawCircle, getScaledDistance, toRad } from './utils';
+import { zoom } from './zoom';
 
 const canvas = document.getElementById('map') as HTMLCanvasElement;
 const ctx = canvas.getContext('2d');
@@ -79,7 +80,7 @@ if (ctx !== null) {
     const E = solveEccentricAnomaly(M, p.eccentricity);
     const v = getTrueAnomaly(E, p.eccentricity);
 
-    const a_px = getScaledDistance(p.semiMajorAxis);
+    const a_px = getScaledDistance(p.semiMajorAxis, true);
     const e = p.eccentricity;
     const b_px = a_px * Math.sqrt(1 - e ** 2);
     const c_px = a_px * e;
@@ -135,6 +136,7 @@ if (ctx !== null) {
 
     context.save();
     context.translate(canvas.width / 2, canvas.height / 2);
+    context.scale(zoomLevel, zoomLevel);
     renderSystem();
     context.restore();
   }
@@ -283,9 +285,16 @@ if (ctx !== null) {
   }
 
   // calling of functions
+  let zoomLevel = 1
   resizeMap();
 
   window.addEventListener('resize', resizeMap);
+  window.addEventListener('wheel', (e) => {
+    console.log(e.deltaY);
+    
+    zoomLevel = zoom(zoomLevel, e.deltaY)
+    resizeMap()
+  })
 } else {
   throw new Error('Canvas not supported!');
 }
