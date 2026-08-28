@@ -88,7 +88,7 @@ if (ctx !== null) {
     const OMEGA = toRad(Omega);
     const angle = v + omega + OMEGA;
     const cx = -c_px * Math.cos(omega + OMEGA);
-    const cy = c_px * Math.sin(omega + OMEGA);
+    const cy = -c_px * Math.sin(omega + OMEGA);
 
     const r = (a_px * (1 - e ** 2)) / (1 + e * Math.cos(v));
     // const angle = v + argPeriapsis;
