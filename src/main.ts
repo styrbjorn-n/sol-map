@@ -1,11 +1,11 @@
 import celestialBodies from '../celestialBodies.json';
 import { drawCircle, getScaledDistance, toRad } from './utils';
-import { zoom } from './zoom';
+import { getVisablePlants, zoom } from './zoom';
 
 const canvas = document.getElementById('map') as HTMLCanvasElement;
 const ctx = canvas.getContext('2d');
 
-type Planet = {
+export type Planet = {
   name: string;
   semiMajorAxis: number; // a in AU
   eccentricity: number; // e
@@ -21,14 +21,6 @@ type Planet = {
 
 if (ctx !== null) {
   const context = ctx;
-
-  function getArgPeriapsis(
-    longitudeOfPerihelion: number,
-    longitudeOfAscendingNode: number,
-  ): number {
-    // ω = ϖ - Ω
-    return toRad(longitudeOfPerihelion - longitudeOfAscendingNode);
-  }
 
   function getJulianCenturiesSinceJ2000(): number {
     // returns n
@@ -69,8 +61,7 @@ if (ctx !== null) {
   }
 
   // should get split up and only handle rendering itself
-  function drawPlanet(p: Planet) {
-    const T = getJulianCenturiesSinceJ2000();
+  function drawPlanet(p: Planet, T: number) {
     const { L, Varpi, Omega } = getOrbitalElementsAtT(p, T);
 
     const M =
@@ -93,58 +84,55 @@ if (ctx !== null) {
     const pX = r * Math.cos(angle);
     const pY = r * Math.sin(angle);
 
-    switch (true) {
-      case zoomLevel >= 1 && p.semiMajorAxis > 10:
-        console.log(p.name, "skipped");
-        break;
-      case zoomLevel <= 0.2 && p.semiMajorAxis < 2:
-        console.log(p.name, "skipped");
-        break;
-      default:       
-        context.beginPath();
-        context.ellipse(cx, cy, a_px, b_px, omega + OMEGA, 0, 2 * Math.PI);
-        context.strokeStyle = 'gray';
-        context.lineWidth = 1 / zoomLevel;
-        context.stroke();
-        context.closePath();
-        
-        context.beginPath();
-        context.arc(pX, pY, 17 / zoomLevel, 0, 2 * Math.PI);
-        context.fillStyle = 'black';
-        context.fill();
-        context.closePath();
-        
-        context.beginPath();
-        context.ellipse(pX, pY, 9 / zoomLevel, 9 / zoomLevel, 0, 0, 2 * Math.PI);
-        context.strokeStyle = p.color;
-        context.lineWidth = 1.15  / zoomLevel;
-        context.stroke();
-        context.closePath();
-        
-        context.beginPath();
-        context.arc(pX, pY, 1.5  / zoomLevel, 0, 2 * Math.PI);
-        context.fillStyle = 'white';
-        context.fill();
-        context.closePath();
-      }
-      }
-      
-      function renderSystem() {
-        const cb: Planet[] = celestialBodies.celestitalBodies;
-    cb.forEach((body) => {
-      drawPlanet(body);
+    context.beginPath();
+    context.ellipse(cx, cy, a_px, b_px, omega + OMEGA, 0, 2 * Math.PI);
+    context.strokeStyle = 'gray';
+    context.lineWidth = 1 / zoomLevel;
+    context.stroke();
+    context.closePath();
+
+    context.beginPath();
+    context.arc(pX, pY, 17 / zoomLevel, 0, 2 * Math.PI);
+    context.fillStyle = 'black';
+    context.fill();
+    context.closePath();
+
+    context.beginPath();
+    context.ellipse(pX, pY, 9 / zoomLevel, 9 / zoomLevel, 0, 0, 2 * Math.PI);
+    context.strokeStyle = p.color;
+    context.lineWidth = 1.15 / zoomLevel;
+    context.stroke();
+    context.closePath();
+
+    context.beginPath();
+    context.arc(pX, pY, 1.5 / zoomLevel, 0, 2 * Math.PI);
+    context.fillStyle = 'white';
+    context.fill();
+    context.closePath();
+  }
+
+  function renderSystem(zoomLevel: number) {
+    const T = getJulianCenturiesSinceJ2000();
+    const visableCB = getVisablePlants(
+      celestialBodies.celestitalBodies,
+      zoomLevel,
+      canvas.width,
+      canvas.height,
+    );
+    celestialBodies.celestitalBodies.forEach((body) => {
+      if (visableCB.has(body.name)) drawPlanet(body, T);
     });
     drawCircle(context, 0, 0, 12.5 / zoomLevel, 'white'); // the sun
   }
 
-  function resizeMap() {
+  function resizeMap(zoomLevel: number) {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
     context.save();
     context.translate(canvas.width / 2, canvas.height / 2);
     context.scale(zoomLevel, zoomLevel);
-    renderSystem();
+    renderSystem(zoomLevel);
     context.restore();
   }
 
@@ -292,16 +280,18 @@ if (ctx !== null) {
   // }
 
   // calling of functions
-  let zoomLevel = 1
-  resizeMap();
+  let zoomLevel = 1;
+  resizeMap(zoomLevel);
 
-  window.addEventListener('resize', resizeMap);
-  window.addEventListener('wheel', (e) => {    
-    zoomLevel = zoom(zoomLevel, e.deltaY)
-    console.log(zoomLevel);
-    
-    resizeMap()
-  })
+  window.addEventListener('resize', () => {
+    resizeMap(zoomLevel);
+  });
+  window.addEventListener('wheel', (e) => {
+    zoomLevel = zoom(zoomLevel, e.deltaY);
+    // console.log(zoomLevel);
+
+    resizeMap(zoomLevel);
+  });
 } else {
   throw new Error('Canvas not supported!');
 }
