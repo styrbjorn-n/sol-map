@@ -1,4 +1,4 @@
-import type { Planet } from './main';
+import type { Planet } from './types';
 import { getScaledDistance } from './utils';
 
 export function zoom(
